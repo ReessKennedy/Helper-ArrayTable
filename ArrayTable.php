@@ -1,7 +1,6 @@
-<?php
+<?php 
 
 function arrayToTable($data, $columns) {
-    // Convert JSON string to associative array if needed
     if (is_string($data)) {
         $data = json_decode($data, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
@@ -9,7 +8,6 @@ function arrayToTable($data, $columns) {
         }
     }
     
-    // Validate data and columns
     if (!is_array($data) || empty($data)) {
         throw new InvalidArgumentException('Data must be a non-empty array');
     }
@@ -17,35 +15,29 @@ function arrayToTable($data, $columns) {
         throw new InvalidArgumentException('Columns must be a non-empty array');
     }
     
-    // Define the column width
-    $columnWidth = 57;  // Approximate 400px width
-    $contentWidth = 55; // Leave room for padding
+    $columnWidth = 42;  // Set fixed column width
+    $contentWidth = 32; // Adjust for three dots instead of ellipsis
     
-    // Create the table header
     $header = '| ' . implode(' | ', array_map(function($col) use ($columnWidth) {
-        return str_pad($col, $columnWidth - 2);  // -2 for padding
+        return str_pad($col, $columnWidth - 2);
     }, array_keys($columns))) . ' |';
     
     $separator = '|-' . implode('-|-', array_fill(0, count($columns), str_repeat('-', $columnWidth - 2))) . '-|';
 
-    // Create the table rows
     $rows = [];
     foreach ($data as $item) {
         $row = [];
         foreach ($columns as $column => $path) {
             $value = stripEmojis(extractValue($item, $path));
             if (strlen($value) > $contentWidth) {
-                $value = substr($value, 0, $contentWidth) . '…'; // Truncate and add an ellipsis
+                $value = substr($value, 0, $contentWidth) . '...';  // Replace ellipsis with three periods
             }
             $row[] = str_pad($value, $columnWidth - 2);
         }
         $rows[] = '| ' . implode(' | ', $row) . ' |';
     }
 
-    // Combine header, separator, and rows
-    $table = $header . "\n" . $separator . "\n" . implode("\n", $rows);
-    
-    return $table;
+    return $header . "\n" . $separator . "\n" . implode("\n", $rows);
 }
 
 function extractValue($item, $path) {
@@ -61,25 +53,6 @@ function extractValue($item, $path) {
 }
 
 function stripEmojis($text) {
-    // Match Emoticons
-    $regexEmoticons = '/[\x{1F600}-\x{1F64F}]/u';
-    $clearText = preg_replace($regexEmoticons, '', $text);
-
-    // Match Miscellaneous Symbols and Pictographs
-    $regexSymbols = '/[\x{1F300}-\x{1F5FF}]/u';
-    $clearText = preg_replace($regexSymbols, '', $clearText);
-
-    // Match Transport And Map Symbols
-    $regexTransport = '/[\x{1F680}-\x{1F6FF}]/u';
-    $clearText = preg_replace($regexTransport, '', $clearText);
-
-    // Match Miscellaneous Symbols
-    $regexMisc = '/[\x{2600}-\x{26FF}]/u';
-    $clearText = preg_replace($regexMisc, '', $clearText);
-
-    // Match Dingbats
-    $regexDingbats = '/[\x{2700}-\x{27BF}]/u';
-    $clearText = preg_replace($regexDingbats, '', $clearText);
-
-    return $clearText;
+    $regex = '/[\x{1F600}-\x{1F64F}|\x{1F300}-\x{1F5FF}|\x{1F680}-\x{1F6FF}|\x{2600}-\x{26FF}|\x{2700}-\x{27BF}]/u';
+    return preg_replace($regex, '', $text);
 }
