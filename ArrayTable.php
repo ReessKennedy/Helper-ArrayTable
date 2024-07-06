@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 function arrayToTable($data, $columns) {
     if (is_string($data)) {
@@ -15,11 +15,15 @@ function arrayToTable($data, $columns) {
         throw new InvalidArgumentException('Columns must be a non-empty array');
     }
     
-    $columnWidth = 42;  // Set fixed column width
-    $contentWidth = 32; // Adjust for three dots instead of ellipsis
+    $columnWidth = 57;  // Set fixed column width
+    $contentWidth = $columnWidth - 5; // Automatically calculate content width
     
+    // Count rows
+    $rowCount = count($data);
+    $rowTotal = "Row total: $rowCount\n\n";  // Prepare row count string
+
     $header = '| ' . implode(' | ', array_map(function($col) use ($columnWidth) {
-        return str_pad($col, $columnWidth - 2);
+        return str_pad($col, $columnWidth - 2);  // -2 for padding inside the separators
     }, array_keys($columns))) . ' |';
     
     $separator = '|-' . implode('-|-', array_fill(0, count($columns), str_repeat('-', $columnWidth - 2))) . '-|';
@@ -37,7 +41,10 @@ function arrayToTable($data, $columns) {
         $rows[] = '| ' . implode(' | ', $row) . ' |';
     }
 
-    return $header . "\n" . $separator . "\n" . implode("\n", $rows);
+    // Combine row count, header, separator, and rows
+    $table = $rowTotal . $header . "\n" . $separator . "\n" . implode("\n", $rows);
+    
+    return $table;
 }
 
 function extractValue($item, $path) {
