@@ -1,6 +1,5 @@
 <?php
 
-
 function arrayToTable($data, $columns) {
     // Convert JSON string to associative array if needed
     if (is_string($data)) {
@@ -34,7 +33,7 @@ function arrayToTable($data, $columns) {
     foreach ($data as $item) {
         $row = [];
         foreach ($columns as $column => $path) {
-            $value = extractValue($item, $path);
+            $value = stripEmojis(extractValue($item, $path));
             if (strlen($value) > $contentWidth) {
                 $value = substr($value, 0, $contentWidth) . '…'; // Truncate and add an ellipsis
             }
@@ -59,4 +58,28 @@ function extractValue($item, $path) {
         $value = $value[$key];
     }
     return $value;
+}
+
+function stripEmojis($text) {
+    // Match Emoticons
+    $regexEmoticons = '/[\x{1F600}-\x{1F64F}]/u';
+    $clearText = preg_replace($regexEmoticons, '', $text);
+
+    // Match Miscellaneous Symbols and Pictographs
+    $regexSymbols = '/[\x{1F300}-\x{1F5FF}]/u';
+    $clearText = preg_replace($regexSymbols, '', $clearText);
+
+    // Match Transport And Map Symbols
+    $regexTransport = '/[\x{1F680}-\x{1F6FF}]/u';
+    $clearText = preg_replace($regexTransport, '', $clearText);
+
+    // Match Miscellaneous Symbols
+    $regexMisc = '/[\x{2600}-\x{26FF}]/u';
+    $clearText = preg_replace($regexMisc, '', $clearText);
+
+    // Match Dingbats
+    $regexDingbats = '/[\x{2700}-\x{27BF}]/u';
+    $clearText = preg_replace($regexDingbats, '', $clearText);
+
+    return $clearText;
 }
