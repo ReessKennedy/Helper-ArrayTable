@@ -1,7 +1,6 @@
 <?php 
 
-function toTable($data, $columns = null) {
-    // Decode JSON string to an array if necessary
+function toTable($data, $settings) {
     if (is_string($data)) {
         $data = json_decode($data, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
@@ -9,56 +8,50 @@ function toTable($data, $columns = null) {
         }
     }
 
-    // Validate input data
     if (!is_array($data) || empty($data)) {
         throw new InvalidArgumentException('Data must be a non-empty array');
     }
 
-    // Check if the data is a single associative array instead of an array of arrays
     if (!is_array(reset($data))) {
-        $data = [$data];
+        $data = [$data];  // Handle a single associative array case
     }
 
-    // Dynamically generate columns if not provided
-    if ($columns === null) {
-        $columns = array_keys(reset($data));
-        $columns = array_combine($columns, $columns);
+    $columns = $settings['columns'] ?? array_combine(array_keys(reset($data)), array_keys(reset($data)));
+    $defaultWidth = $settings['defaultWidth'] ?? 20;  // Default column width
+
+    // Prepare headers and separators
+    $header = '| ';
+    $separator = '|';
+    foreach ($columns as $column => $path) {
+        $effectiveWidth = $defaultWidth - 2;  // Subtract 2 for padding on both sides
+        $headerText = str_pad($column, $defaultWidth, ' ', STR_PAD_RIGHT) . ' | ';
+        $header .= $headerText;
+        $separator .= str_repeat('-', $defaultWidth) . '|';  // Make sure the separator matches the header text
     }
-
-    $columnWidth = 20;  // Set fixed column width
-    $contentWidth = $columnWidth - 5; // Automatically calculate content width
-
-    // Count rows and prepare row count string
-    $rowCount = count($data);
-    $rowTotal = "Row total: $rowCount\n\n";
-
-    // Prepare table header
-    $header = '| ' . implode(' | ', array_map(function($col) use ($columnWidth) {
-        return str_pad($col, $columnWidth - 2);  // -2 for padding inside the separators
-    }, array_keys($columns))) . ' |';
-
-    // Prepare table separator
-    $separator = '|-' . implode('-|-', array_fill(0, count($columns), str_repeat('-', $columnWidth - 2))) . '-|';
 
     // Prepare table rows
     $rows = [];
     foreach ($data as $item) {
-        $row = [];
+        $row = '| ';
         foreach ($columns as $column => $path) {
-            $value = stripEmojis(extractValue($item, $path));
-            if (strlen($value) > $contentWidth) {
-                $value = substr($value, 0, $contentWidth) . '...';  // Replace ellipsis with three periods
+            $value = extractValue($item, $path);
+            if ($settings['stripEmojis'] ?? true) {
+                $value = stripEmojis($value);
             }
-            $row[] = str_pad($value, $columnWidth - 2);
+            $value = strlen($value) > $effectiveWidth ? substr($value, 0, $effectiveWidth - 3) . '...' : $value;
+            $row .= str_pad($value, $effectiveWidth, ' ', STR_PAD_RIGHT) . ' | ';
         }
-        $rows[] = '| ' . implode(' | ', $row) . ' |';
+        $rows[] = $row;
     }
 
-    // Combine row count, header, separator, and rows into final table
-    $table = $rowTotal . $header . "\n" . $separator . "\n" . implode("\n", $rows);
+    // Combine row count, header, separator, and rows into the final table
+    $rowCount = count($data);
+    $rowTotal = "Row total: $rowCount\n\n";
+    $table = $rowTotal . $header . "\n" . $separator . "\n" . implode("\n", $rows) . "\n";
 
     return $table;
 }
+
 
 // Helper functions (assuming these exist in your code)
 function stripEmojis($text) {
