@@ -1,5 +1,3 @@
-<?php
-
 function arrayToTable($data, $columns) {
     if (is_string($data)) {
         $data = json_decode($data, true);
@@ -15,28 +13,33 @@ function arrayToTable($data, $columns) {
         throw new InvalidArgumentException('Columns must be a non-empty array');
     }
     
-    $columnWidth = 57;  // Set fixed column width
-    $contentWidth = $columnWidth - 5; // Automatically calculate content width
-    
+    $defaultColumnWidth = 20;  // Default fixed column width
+
     // Count rows
     $rowCount = count($data);
     $rowTotal = "Row total: $rowCount\n\n";  // Prepare row count string
 
-    $header = '| ' . implode(' | ', array_map(function($col) use ($columnWidth) {
-        return str_pad($col, $columnWidth - 2);  // -2 for padding inside the separators
+    $header = '| ' . implode(' | ', array_map(function($col) use ($columns, $defaultColumnWidth) {
+        $width = is_array($col) ? $col['width'] - 2 : $defaultColumnWidth - 2;
+        return str_pad(isset($col['name']) ? $col['name'] : $col, $width);
     }, array_keys($columns))) . ' |';
     
-    $separator = '|-' . implode('-|-', array_fill(0, count($columns), str_repeat('-', $columnWidth - 2))) . '-|';
+    $separator = '|-' . implode('-|-', array_map(function($col) use ($columns, $defaultColumnWidth) {
+        $width = is_array($col) ? $col['width'] - 2 : $defaultColumnWidth - 2;
+        return str_repeat('-', $width);
+    }, array_keys($columns))) . '-|';
 
     $rows = [];
     foreach ($data as $item) {
         $row = [];
-        foreach ($columns as $column => $path) {
+        foreach ($columns as $column => $details) {
+            $path = is_array($details) ? $details['path'] : $details;
+            $width = is_array($details) ? $details['width'] - 4 : $defaultColumnWidth - 4;
             $value = stripEmojis(extractValue($item, $path));
-            if (strlen($value) > $contentWidth) {
-                $value = substr($value, 0, $contentWidth) . '...';  // Replace ellipsis with three periods
+            if (strlen($value) > $width) {
+                $value = substr($value, 0, $width) . '...';
             }
-            $row[] = str_pad($value, $columnWidth - 2);
+            $row[] = str_pad($value, $width);
         }
         $rows[] = '| ' . implode(' | ', $row) . ' |';
     }
