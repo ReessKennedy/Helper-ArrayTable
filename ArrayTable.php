@@ -16,17 +16,22 @@ function toTable($data, $settings) {
         $data = [$data];  // Handle a single associative array case
     }
 
+    // Use columns from settings or dynamically generate if not provided
     $columns = $settings['columns'] ?? array_combine(array_keys(reset($data)), array_keys(reset($data)));
     $defaultWidth = $settings['defaultWidth'] ?? 20;  // Default column width
+    $contentWidth = $defaultWidth - 6;  // Width for content, adjusting for padding
 
-    // Prepare headers and separators
+    // Count rows and prepare row count string
+    $rowCount = count($data);
+    $rowTotal = "Row total: $rowCount\n\n";
+
+    // Prepare table header
     $header = '| ';
-    $separator = '|';
+    $separator = '|-';
     foreach ($columns as $column => $path) {
-        $effectiveWidth = $defaultWidth - 2;  // Subtract 2 for padding on both sides
-        $headerText = str_pad($column, $defaultWidth, ' ', STR_PAD_RIGHT) . ' | ';
+        $headerText = str_pad($column, $defaultWidth - 4, ' ', STR_PAD_RIGHT) . ' | ';
         $header .= $headerText;
-        $separator .= str_repeat('-', $defaultWidth) . '|';  // Make sure the separator matches the header text
+        $separator .= str_repeat('-', $defaultWidth - 4) . '-|';  // Match the header length
     }
 
     // Prepare table rows
@@ -36,17 +41,17 @@ function toTable($data, $settings) {
         foreach ($columns as $column => $path) {
             $value = extractValue($item, $path);
             if ($settings['stripEmojis'] ?? true) {
-                $value = stripEmojis($value);
+                $value = stripEmojis($value);  // Assume true by default
             }
-            $value = strlen($value) > $effectiveWidth ? substr($value, 0, $effectiveWidth - 3) . '...' : $value;
-            $row .= str_pad($value, $effectiveWidth, ' ', STR_PAD_RIGHT) . ' | ';
+            if (strlen($value) > $contentWidth) {
+                $value = substr($value, 0, $contentWidth - 3) . '...';  // Truncate data
+            }
+            $row .= str_pad($value, $defaultWidth - 4, ' ', STR_PAD_RIGHT) . ' | ';
         }
         $rows[] = $row;
     }
 
     // Combine row count, header, separator, and rows into the final table
-    $rowCount = count($data);
-    $rowTotal = "Row total: $rowCount\n\n";
     $table = $rowTotal . $header . "\n" . $separator . "\n" . implode("\n", $rows) . "\n";
 
     return $table;
