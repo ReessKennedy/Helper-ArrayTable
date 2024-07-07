@@ -27,11 +27,11 @@ function toTable($data, $settings) {
 
     // Prepare table header
     $header = '| ';
-    $separator = '|-';
+    $separator = '|';
     foreach ($columns as $column => $path) {
         $headerText = str_pad($column, $defaultWidth - 4, ' ', STR_PAD_RIGHT) . ' | ';
         $header .= $headerText;
-        $separator .= str_repeat('-', $defaultWidth - 4) . '-|';  // Match the header length
+        $separator .= str_repeat('-', $defaultWidth - 4) . '--|';  // Match the header length
     }
 
     // Prepare table rows
