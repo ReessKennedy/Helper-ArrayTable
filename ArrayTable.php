@@ -1,6 +1,6 @@
-<?php
+<?php 
 
-function arrayToTable($data, $columns) {
+function arrayToTable($data, $columns = null) {
     // Decode JSON string to an array if necessary
     if (is_string($data)) {
         $data = json_decode($data, true);
@@ -13,8 +13,16 @@ function arrayToTable($data, $columns) {
     if (!is_array($data) || empty($data)) {
         throw new InvalidArgumentException('Data must be a non-empty array');
     }
-    if (!is_array($columns) || empty($columns)) {
-        throw new InvalidArgumentException('Columns must be a non-empty array');
+
+    // Check if the data is a single associative array instead of an array of arrays
+    if (!is_array(reset($data))) {
+        $data = [$data];
+    }
+
+    // Dynamically generate columns if not provided
+    if ($columns === null) {
+        $columns = array_keys(reset($data));
+        $columns = array_combine($columns, $columns);
     }
 
     $columnWidth = 20;  // Set fixed column width
@@ -70,3 +78,4 @@ function extractValue($item, $path) {
     }
     return $item;
 }
+
