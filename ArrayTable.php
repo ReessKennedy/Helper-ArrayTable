@@ -1,6 +1,6 @@
 <?php 
 
-function arrayToTable($data, $columns = null) {
+function toTable($data, $columns = null) {
     // Decode JSON string to an array if necessary
     if (is_string($data)) {
         $data = json_decode($data, true);
