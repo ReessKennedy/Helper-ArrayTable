@@ -1,4 +1,6 @@
 <?php 
+
+
 function toTable($data, $settings) {
     if (is_string($data)) {
         $data = json_decode($data, true);
@@ -81,6 +83,7 @@ function toTable($data, $settings) {
 
     return $table;
 }
+
 // Helper functions
 function stripEmojis($text) {
     return preg_replace('/[[:^print:]]/', '', $text);
@@ -96,4 +99,19 @@ function extractValue($item, $path) {
         }
     }
     return $item;
+}
+
+// Example transformation function
+function timeAgo($time) {
+    $time = strtotime($time);
+    $diff = time() - $time;
+    if ($diff < 60) {
+        return $diff . ' seconds ago';
+    } elseif ($diff < 3600) {
+        return floor($diff / 60) . ' minutes ago';
+    } elseif ($diff < 86400) {
+        return floor($diff / 3600) . ' hours ago';
+    } else {
+        return floor($diff / 86400) . ' days ago';
+    }
 }
