@@ -1,6 +1,5 @@
 <?php 
 
-
 function toTable($data, $settings) {
     if (is_string($data)) {
         $data = json_decode($data, true);
@@ -34,9 +33,17 @@ function toTable($data, $settings) {
     $header = '| ';
     $separator = '|';
     foreach ($columns as $column => $path) {
-        $headerText = str_pad($column, $defaultWidth - 4, ' ', STR_PAD_RIGHT) . ' | ';
+        list($colWidth, $cleanColumn) = getWidth($column);
+        $effectiveWidth = $colWidth ?? $defaultWidth;
+
+        // Apply truncation to headers
+        if (strlen($cleanColumn) > $effectiveWidth - 4) {
+            $cleanColumn = substr($cleanColumn, 0, $effectiveWidth - 7) . '...';
+        }
+
+        $headerText = str_pad($cleanColumn, $effectiveWidth - 4, ' ', STR_PAD_RIGHT) . ' | ';
         $header .= $headerText;
-        $separator .= str_repeat('-', $defaultWidth - 4) . '--|';  // Match the header length
+        $separator .= str_repeat('-', $effectiveWidth - 4) . '--|';  // Match the header length
     }
 
     // Prepare table rows
@@ -45,22 +52,20 @@ function toTable($data, $settings) {
     foreach ($data as $item) {
         $row = '| ';
         foreach ($columns as $column => $path) {
-            if ($column === '#') {
-                $value = $count;
-            } else {
-                // Check if the path is a function call
-                if (preg_match('/^(\w+)\("(.+)"\)$/', $path, $matches)) {
-                    $functionName = $matches[1];
-                    $argumentPath = $matches[2];
-                    $argumentValue = extractValue($item, $argumentPath);
-                    echo "Function: $functionName, Argument Path: $argumentPath, Argument Value: $argumentValue\n"; // Debug statement
-                    if (function_exists($functionName)) {
-                        $value = $functionName($argumentValue);
-                    } else {
-                        $value = 'Invalid function';
-                    }
+            list($colWidth, $cleanColumn) = getWidth($column);
+            $effectiveWidth = $colWidth ?? $defaultWidth;
+            $value = ($cleanColumn === '#') ? $count : extractValue($item, $path);
+            
+            // Check if the path is a function call
+            if (preg_match('/^(\w+)\("(.+)"\)$/', $path, $matches)) {
+                $functionName = $matches[1];
+                $argumentPath = $matches[2];
+                $argumentValue = extractValue($item, $argumentPath);
+                
+                if (function_exists($functionName)) {
+                    $value = $functionName($argumentValue);
                 } else {
-                    $value = extractValue($item, $path);
+                    $value = 'Invalid function';
                 }
             }
 
@@ -68,11 +73,11 @@ function toTable($data, $settings) {
                 $value = stripEmojis($value);  // Assume true by default
             }
 
-            if (strlen($value) > $contentWidth) {
-                $value = substr($value, 0, $contentWidth - 3) . '...';  // Truncate data
+            if (strlen($value) > $effectiveWidth - 4) {
+                $value = substr($value, 0, $effectiveWidth - 7) . '...';  // Truncate data
             }
 
-            $row .= str_pad($value, $defaultWidth - 4, ' ', STR_PAD_RIGHT) . ' | ';
+            $row .= str_pad($value, $effectiveWidth - 4, ' ', STR_PAD_RIGHT) . ' | ';
         }
         $rows[] = $row;
         $count++;
@@ -84,7 +89,17 @@ function toTable($data, $settings) {
     return $table;
 }
 
+
+
 // Helper functions
+function getWidth($column) {
+    $parts = explode('|', $column);
+    if (count($parts) == 2 && is_numeric($parts[1])) {
+        return [(int)$parts[1], $parts[0]];
+    }
+    return [null, $column];  // Default to null width
+}
+
 function stripEmojis($text) {
     return preg_replace('/[[:^print:]]/', '', $text);
 }
@@ -100,6 +115,8 @@ function extractValue($item, $path) {
     }
     return $item;
 }
+
+
 
 // Example transformation function
 function timeAgo($time) {
