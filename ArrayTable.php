@@ -1,5 +1,4 @@
 <?php 
-
 function toTable($data, $settings) {
     if (is_string($data)) {
         $data = json_decode($data, true);
@@ -16,8 +15,12 @@ function toTable($data, $settings) {
         $data = [$data];  // Handle a single associative array case
     }
 
-    // Use columns from settings or dynamically generate if not provided
-    $columns = $settings['columns'] ?? array_combine(array_keys(reset($data)), array_keys(reset($data)));
+    // Add counter column if the setting is enabled
+    $columns = $settings['columns'];
+    if (isset($settings['countCol']) && $settings['countCol'] === true) {
+        $columns = array_merge(['#' => 'count'], $columns);
+    }
+
     $defaultWidth = $settings['defaultWidth'] ?? 20;  // Default column width
     $contentWidth = $defaultWidth - 6;  // Width for content, adjusting for padding
 
@@ -36,19 +39,41 @@ function toTable($data, $settings) {
 
     // Prepare table rows
     $rows = [];
+    $count = 1;
     foreach ($data as $item) {
         $row = '| ';
         foreach ($columns as $column => $path) {
-            $value = extractValue($item, $path);
+            if ($column === '#') {
+                $value = $count;
+            } else {
+                // Check if the path is a function call
+                if (preg_match('/^(\w+)\("(.+)"\)$/', $path, $matches)) {
+                    $functionName = $matches[1];
+                    $argumentPath = $matches[2];
+                    $argumentValue = extractValue($item, $argumentPath);
+                    echo "Function: $functionName, Argument Path: $argumentPath, Argument Value: $argumentValue\n"; // Debug statement
+                    if (function_exists($functionName)) {
+                        $value = $functionName($argumentValue);
+                    } else {
+                        $value = 'Invalid function';
+                    }
+                } else {
+                    $value = extractValue($item, $path);
+                }
+            }
+
             if ($settings['stripEmojis'] ?? true) {
                 $value = stripEmojis($value);  // Assume true by default
             }
+
             if (strlen($value) > $contentWidth) {
                 $value = substr($value, 0, $contentWidth - 3) . '...';  // Truncate data
             }
+
             $row .= str_pad($value, $defaultWidth - 4, ' ', STR_PAD_RIGHT) . ' | ';
         }
         $rows[] = $row;
+        $count++;
     }
 
     // Combine row count, header, separator, and rows into the final table
@@ -56,16 +81,12 @@ function toTable($data, $settings) {
 
     return $table;
 }
-
-
-// Helper functions (assuming these exist in your code)
+// Helper functions
 function stripEmojis($text) {
-    // Implement the logic to remove emojis from the text
     return preg_replace('/[[:^print:]]/', '', $text);
 }
 
 function extractValue($item, $path) {
-    // Implement the logic to extract value from item using the given path
     $keys = explode('.', $path);
     foreach ($keys as $key) {
         if (isset($item[$key])) {
@@ -76,4 +97,3 @@ function extractValue($item, $path) {
     }
     return $item;
 }
-
