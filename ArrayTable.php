@@ -41,7 +41,11 @@ function gettoTable($data, $settings) {
         $effectiveWidth = $colWidth ?? $defaultWidth;
 
         // Ensure $cleanColumn is a string before calling strlen
-        if (is_string($cleanColumn) && strlen($cleanColumn) > $effectiveWidth - 4) {
+        if (!is_string($cleanColumn)) {
+            $cleanColumn = json_encode($cleanColumn);  // Convert to JSON string if not a string
+        }
+
+        if (strlen($cleanColumn) > $effectiveWidth - 4) {
             $cleanColumn = substr($cleanColumn, 0, $effectiveWidth - 7) . '...';
         }
 
@@ -77,8 +81,12 @@ function gettoTable($data, $settings) {
                 $value = stripEmojis($value);  // Assume true by default
             }
 
-            // Ensure $value is a string before calling strlen
-            if (is_string($value) && strlen($value) > $effectiveWidth - 4) {
+            // Ensure $value is a string before calling strlen and str_pad
+            if (!is_string($value)) {
+                $value = json_encode($value);  // Convert arrays to JSON strings
+            }
+
+            if (strlen($value) > $effectiveWidth - 4) {
                 $value = substr($value, 0, $effectiveWidth - 7) . '...';  // Truncate data
             }
 
