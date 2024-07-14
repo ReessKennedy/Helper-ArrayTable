@@ -4,7 +4,6 @@ function toTable($data, $settings) {
 	echo gettoTable($data, $settings);
 } 	
 
-
 function gettoTable($data, $settings) {
     if (is_string($data)) {
         $data = json_decode($data, true);
@@ -41,8 +40,8 @@ function gettoTable($data, $settings) {
         list($colWidth, $cleanColumn) = getWidth($column);
         $effectiveWidth = $colWidth ?? $defaultWidth;
 
-        // Apply truncation to headers
-        if (strlen($cleanColumn) > $effectiveWidth - 4) {
+        // Ensure $cleanColumn is a string before calling strlen
+        if (is_string($cleanColumn) && strlen($cleanColumn) > $effectiveWidth - 4) {
             $cleanColumn = substr($cleanColumn, 0, $effectiveWidth - 7) . '...';
         }
 
@@ -78,7 +77,8 @@ function gettoTable($data, $settings) {
                 $value = stripEmojis($value);  // Assume true by default
             }
 
-            if (strlen($value) > $effectiveWidth - 4) {
+            // Ensure $value is a string before calling strlen
+            if (is_string($value) && strlen($value) > $effectiveWidth - 4) {
                 $value = substr($value, 0, $effectiveWidth - 7) . '...';  // Truncate data
             }
 
@@ -94,8 +94,6 @@ function gettoTable($data, $settings) {
     return $table;
 }
 
-
-
 // Helper functions
 function getWidth($column) {
     $parts = explode('|', $column);
@@ -106,7 +104,8 @@ function getWidth($column) {
 }
 
 function stripEmojis($text) {
-    return preg_replace('/[[:^print:]]/', '', $text);
+    // Improved regex to strip emojis
+    return preg_replace('/[[:^print:]]|[\x{1F600}-\x{1F64F}]/u', '', $text);
 }
 
 function extractValue($item, $path) {
@@ -120,8 +119,6 @@ function extractValue($item, $path) {
     }
     return $item;
 }
-
-
 
 // Example transformation function
 function timeAgo($time) {
