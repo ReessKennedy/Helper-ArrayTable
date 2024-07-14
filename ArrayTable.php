@@ -1,6 +1,11 @@
 <?php 
 
 function toTable($data, $settings) {
+	echo gettoTable($data, $settings);
+} 	
+
+
+function gettoTable($data, $settings) {
     if (is_string($data)) {
         $data = json_decode($data, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
