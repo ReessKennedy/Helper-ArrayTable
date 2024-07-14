@@ -62,32 +62,36 @@ function gettoTable($data, $settings) {
         foreach ($columns as $column => $path) {
             list($colWidth, $cleanColumn) = getWidth($column);
             $effectiveWidth = $colWidth ?? $defaultWidth;
-            $value = ($cleanColumn === '#') ? $count : extractValue($item, $path);
-            
-            // Check if the path is a function call
-            if (preg_match('/^(\w+)\("(.+)"\)$/', $path, $matches)) {
-                $functionName = $matches[1];
-                $argumentPath = $matches[2];
-                $argumentValue = extractValue($item, $argumentPath);
-                
-                if (function_exists($functionName)) {
-                    $value = $functionName($argumentValue);
-                } else {
-                    $value = 'Invalid function';
+            try {
+                $value = ($cleanColumn === '#') ? $count : extractValue($item, $path);
+
+                // Check if the path is a function call
+                if (preg_match('/^(\w+)\("(.+)"\)$/', $path, $matches)) {
+                    $functionName = $matches[1];
+                    $argumentPath = $matches[2];
+                    $argumentValue = extractValue($item, $argumentPath);
+                    
+                    if (function_exists($functionName)) {
+                        $value = $functionName($argumentValue);
+                    } else {
+                        $value = 'Invalid function';
+                    }
                 }
-            }
 
-            if ($settings['stripEmojis'] ?? true) {
-                $value = stripEmojis($value);  // Assume true by default
-            }
+                if ($settings['stripEmojis'] ?? true) {
+                    $value = stripEmojis($value);  // Assume true by default
+                }
 
-            // Ensure $value is a string before calling strlen and str_pad
-            if (!is_string($value)) {
-                $value = json_encode($value);  // Convert arrays to JSON strings
-            }
+                // Ensure $value is a string before calling strlen and str_pad
+                if (!is_string($value)) {
+                    $value = json_encode($value);  // Convert arrays to JSON strings
+                }
 
-            if (strlen($value) > $effectiveWidth - 4) {
-                $value = substr($value, 0, $effectiveWidth - 7) . '...';  // Truncate data
+                if (strlen($value) > $effectiveWidth - 4) {
+                    $value = substr($value, 0, $effectiveWidth - 7) . '...';  // Truncate data
+                }
+            } catch (Exception $e) {
+                $value = '!! Column def error !!';
             }
 
             $row .= str_pad($value, $effectiveWidth - 4, ' ', STR_PAD_RIGHT) . ' | ';
